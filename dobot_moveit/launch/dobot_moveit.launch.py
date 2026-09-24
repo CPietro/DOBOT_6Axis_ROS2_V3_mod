@@ -3,6 +3,8 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 import os
 from ament_index_python.packages import get_package_share_directory
+from launch_ros.actions import SetParameter
+
 def generate_launch_description():
     mane = os.getenv("DOBOT_TYPE")
     package_name = f'{mane}_moveit'
@@ -12,6 +14,10 @@ def generate_launch_description():
 
     moveit_model_path = os.path.join(pkg_share,'launch',urdf_name)
     ld = LaunchDescription()
+
+    # Fix sim time moveit per usare lo stesso orologio di gazebo
+    ld.add_action(SetParameter(name='use_sim_time', value=True))
+
     included_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(moveit_model_path)
     )

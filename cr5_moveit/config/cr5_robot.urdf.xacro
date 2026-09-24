@@ -1,14 +1,103 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="cr5_robot">
+    <xacro:arg name="x" default="0.0" />
+    <xacro:arg name="y" default="0.0" />
+    <xacro:arg name="z" default="0.0" />
     <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+    <xacro:arg name="use_gazebo" default="true" />
 
-    <!-- Import cr5_robot urdf file -->
     <xacro:include filename="$(find dobot_rviz)/urdf/cr5_robot.urdf" />
 
-    <!-- Import control_xacro -->
-    <xacro:include filename="cr5_robot.ros2_control.xacro" />
+    <link name="world" />
+    <joint name="world_to_dummy" type="fixed">
+        <parent link="world" />
+        <child link="dummy_link" />
+        <origin xyz="$(arg x) $(arg y) $(arg z)" rpy="0 0 0"/>
+    </joint>
 
+    <joint name="zed_optical_joint" type="fixed">
+        <parent link="zed" />
+        <child link="zed_optical_link" />
+        <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+    </joint>
+    <link name="zed_optical_link"></link>
+    
+    <xacro:unless value="$(arg use_gazebo)">
+        <xacro:include filename="cr5_robot.ros2_control.xacro" />
+        <xacro:cr5_robot_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+    </xacro:unless>
 
-    <xacro:cr5_robot_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+    <xacro:if value="$(arg use_gazebo)">
+        <ros2_control name="GazeboSystem" type="system">
+            <hardware>
+                <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+            </hardware>
+            <joint name="joint1">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+            <joint name="joint2">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+            <joint name="joint3">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+            <joint name="joint4">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+            <joint name="joint5">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+            <joint name="joint6">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+        </ros2_control>
+
+        <gazebo>
+            <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+                <parameters>$(find cr5_gazebo)/config/controllers.yaml</parameters>
+            </plugin>
+        </gazebo>
+
+        <gazebo reference="zed">
+            <sensor type="depth" name="zed_camera">
+            <always_on>true</always_on>
+            <update_rate>15.0</update_rate>
+            <camera>
+                <horizontal_fov>1.5</horizontal_fov>
+                <image>
+                <width>640</width>
+                <height>480</height>
+                <format>R8G8B8</format>
+                </image>
+                <clip>
+                <near>0.1</near>
+                <far>8.0</far>
+                </clip>
+            </camera>
+            <plugin name="zed_camera_controller" filename="libgazebo_ros_camera.so">
+                <ros>
+                <namespace>zed</namespace>
+                </ros>
+                <camera_name>camera</camera_name>
+                <frame_name>zed_optical_link</frame_name>
+                <min_depth>0.1</min_depth>
+                <max_depth>8.0</max_depth>
+            </plugin>
+            </sensor>
+            <material>Gazebo/DarkGrey</material>
+        </gazebo>
+    </xacro:if>
 
 </robot>
